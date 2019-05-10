@@ -18,8 +18,8 @@ class Browser(Chrome):
 
     _GET_RETRY_MAX = 3
 
-    _tabs = {}
-    _local_storage = {}
+    tabs = {}
+    ls = {}
     
     def __init__(self):
         capabilities = DesiredCapabilities.CHROME
@@ -28,7 +28,7 @@ class Browser(Chrome):
         if driver is None:
             raise Exception("No chromedriver available for platform " + platform.system())
         super(Browser, self).__init__(driver, desired_capabilities=capabilities)
-        self._tabs["default"] = self.window_handles[0]
+        self.tabs["default"] = self.window_handles[0]
 
     def wait(self, timeout=1):
         time.sleep(timeout)
@@ -46,28 +46,28 @@ class Browser(Chrome):
                 return self.open(url, retry_count + 1)
 
     def new(self, tab_id):
-        if tab_id in self._tabs:
+        if tab_id in self.tabs:
             raise DuplicateTabError
-        existing_tabs = set(self.window_handles)
+        existingtabs = set(self.window_handles)
         self.execute_script('''window.open('http://httpstat.us/200')''')
-        new_tab = list(set(self.window_handles) - existing_tabs)[0]
-        self._tabs[tab_id] = new_tab
+        new_tab = list(set(self.window_handles) - existingtabs)[0]
+        self.tabs[tab_id] = new_tab
         return self
 
     def on(self, tab_id):
-        if tab_id not in self._tabs:
+        if tab_id not in self.tabs:
             raise TabNotExistError
-        self.switch_to.window(self._tabs[tab_id])
+        self.switch_to.window(self.tabs[tab_id])
         return self
 
     def drop(self, tab_id):
-        if tab_id not in self._tabs:
+        if tab_id not in self.tabs:
             raise TabNotExistError
-        if len(self._tabs) == 1:
+        if len(self.tabs) == 1:
             self.new("default")
         self.on(tab_id).execute_script('''window.close()''')
         self.switch_to.window(self.window_handles[0])
-        del self._tabs[tab_id]
+        del self.tabs[tab_id]
         return self
 
     def ensure(self, xpath, innerHTML):
@@ -96,8 +96,8 @@ class Browser(Chrome):
         keys = self.execute(Command.GET_LOCAL_STORAGE_KEYS)['value']
         if keys is None:
             raise LocalstorageReadError
-        self._local_storage = {}
+        self.ls = {}
         for key in keys:
             value = self.execute(Command.GET_LOCAL_STORAGE_ITEM, {'key': urllib.quote(key, safe='')})['value']
-            self._local_storage[key] = value
+            self.ls[key] = value
         return self

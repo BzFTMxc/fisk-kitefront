@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import urllib
+
+from selenium.webdriver.remote.command import Command
 
 from kitefront.browser import Browser
 from kitefront.admin import Admin
@@ -30,11 +33,27 @@ class Kite:
             raise Exception("Could not login to Kite")
         self._b.read_local_storage()
 
+    def context(self):
+        return {
+            'user_id': self._b.ls['__storejs_kite_user_id'],
+            'public_token': self._b.ls['__storejs_kite_public_token'],
+            'api_key': 'kitefront',
+            'access_token': ''
+        }
+
+    def context_str(self):
+        return urllib.urlencode(self.context())
+
+    def ciqrandom(self):
+        tabex_master = self._b.execute(Command.GET_LOCAL_STORAGE_ITEM, {'key': 'tabex_default_master'})['value']
+        ciqrandom = self._b.execute(Command.GET_LOCAL_STORAGE_ITEM, {'key': 'tabex_default_router_' + str(tabex_master)})['value']
+        return str(ciqrandom)
+
     def admin(self):
-        return Admin(self._b)
+        return Admin(self)
 
     def data(self):
-        return Data(self._b)
+        return Data(self)
 
     def trade(self):
-        return Trade(self._b)
+        return Trade(self)
