@@ -20,6 +20,7 @@ class Browser(Chrome):
 
     tabs = {}
     ls = {}
+    cookies = []
     
     def __init__(self):
         capabilities = DesiredCapabilities.CHROME
@@ -91,6 +92,13 @@ class Browser(Chrome):
             raise InterfaceError
         element.click()
         return self
+
+    def read_cookies(self):
+        cookies = self.execute(Command.GET_ALL_COOKIES)['value']
+        if cookies is None:
+            self.cookies = []
+        else:
+            self.cookies = cookies
 
     def read_local_storage(self):
         keys = self.execute(Command.GET_LOCAL_STORAGE_KEYS)['value']

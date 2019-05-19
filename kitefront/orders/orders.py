@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import requests
+from kitefront.feature import Feature
 
 
-class Trade:
-
-    def __init__(self, kite):
-        self._k = kite
-        self._b = kite._b
+class Orders(Feature):
 
     def positions(self):
-        return self._k.request('GET', '/portfolio/positions')
+        return self.request('GET', '/portfolio/positions')
 
     def orders(self):
-        return self._k.request('GET', '/orders')
+        return self.request('GET', '/orders')
 
     def place_order(self, tradingsymbol, exchange, transaction_type, quantity, variety, type, product, validity):
         order = {

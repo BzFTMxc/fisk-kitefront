@@ -28,4 +28,5 @@ class Data:
         page_source = self._b.page_source
         self._b.drop(tab_id)
         page_source = re.sub('<[^<]+?>', '', page_source)
+        # [[timestamp, open, high, low, close, volume]]
         return json.loads(page_source)

@@ -2,16 +2,14 @@
 # -*- coding: utf-8 -*-
 import urllib
 
+import requests
 from selenium.webdriver.remote.command import Command
 
 from kitefront.browser import Browser
-from kitefront.admin import Admin
-from kitefront.data import Data
-from kitefront.trade import Trade
+from kitefront.orders.orders import Orders
 
 
-class Kite:
-
+class Kite(Orders):
     _b = None
 
     def __init__(self, username, password, pin):
@@ -32,6 +30,7 @@ class Kite:
         if self._b.current_url != 'https://kite.zerodha.com/dashboard':
             raise Exception("Could not login to Kite")
         self._b.read_local_storage()
+        self._b.read_cookies()
 
     def context(self):
         return {
@@ -46,14 +45,31 @@ class Kite:
 
     def ciqrandom(self):
         tabex_master = self._b.execute(Command.GET_LOCAL_STORAGE_ITEM, {'key': 'tabex_default_master'})['value']
-        ciqrandom = self._b.execute(Command.GET_LOCAL_STORAGE_ITEM, {'key': 'tabex_default_router_' + str(tabex_master)})['value']
+        ciqrandom = \
+            self._b.execute(Command.GET_LOCAL_STORAGE_ITEM, {'key': 'tabex_default_router_' + str(tabex_master)})[
+                'value']
         return str(ciqrandom)
 
-    def admin(self):
-        return Admin(self)
-
-    def data(self):
-        return Data(self)
-
-    def trade(self):
-        return Trade(self)
+    def request(self, method, endpoint, **kwargs):
+        cookies = '; '.join([cookie['name'] + '=' + cookie['value'] for cookie in self._b.cookies])
+        headers = {
+            'authorization': 'enctoken ' + str(self._b.ls['__storejs_kite_enctoken']).strip('"'),
+            'accept-encoding': 'gzip, deflate',
+            'accept-language': 'en-US,en;q=0.9,th;q=0.8',
+            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Safari/537.36',
+            'x-kite-version': '2.1.0',
+            'x-kite-userid': str(self._b.ls['__storejs_kite_user_id']).strip('"'),
+            'accept': 'application/json, text/plain, */*',
+            'referer': 'https://kite.zerodha.com/positions',
+            'authority': 'kite.zerodha.com',
+            'cookie': cookies
+        }
+        if method == 'POST':
+            headers['content-type'] = 'application/x-www-form-urlencoded'
+        response = requests.request(
+            method,
+            'https://kite.zerodha.com/oms' + endpoint,
+            headers=headers,
+            **kwargs
+        )
+        return response.json()
