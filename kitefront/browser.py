@@ -8,6 +8,7 @@ import urllib
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver import Chrome
 from selenium.webdriver import DesiredCapabilities
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.command import Command
 
 from kitefront import chromedriver
@@ -15,20 +16,23 @@ from kitefront.exceptions import DuplicateTabError, TabNotExistError, InterfaceE
 
 
 class Browser(Chrome):
-
     _GET_RETRY_MAX = 3
 
     tabs = {}
     ls = {}
     cookies = []
-    
-    def __init__(self):
+    watchers = []
+
+    def __init__(self, headless=False):
+        chrome_options = Options()
+        if headless:
+            chrome_options.add_argument("--headless")
         capabilities = DesiredCapabilities.CHROME
         capabilities['loggingPrefs'] = {'performance': 'ALL'}
         driver = chromedriver.CURRENT
         if driver is None:
             raise Exception("No chromedriver available for platform " + platform.system())
-        super(Browser, self).__init__(driver, desired_capabilities=capabilities)
+        super(Browser, self).__init__(driver, chrome_options=chrome_options, desired_capabilities=capabilities)
         self.tabs["default"] = self.window_handles[0]
 
     def wait(self, timeout=1):
@@ -59,6 +63,12 @@ class Browser(Chrome):
         if tab_id not in self.tabs:
             raise TabNotExistError
         self.switch_to.window(self.tabs[tab_id])
+        return self
+
+    def watch(self, id, url):
+        if id in self.watchers:
+            return self
+        self.new('watcher_' + id).on('watcher_' + id).open(url)
         return self
 
     def drop(self, tab_id):

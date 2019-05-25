@@ -3,4 +3,9 @@
 
 
 class Feature:
-    pass
+
+    def request(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def watch(self, id, url):
+        raise NotImplementedError
